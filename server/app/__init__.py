@@ -4,6 +4,23 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+REVIEWERS = [
+    {'name': 'Dr. Mary', 'email': 'mary@proposalx.com', 'password': '1234567'},
+    {'name': 'Dr. James', 'email': 'james@proposalx.com', 'password': '1234567'},
+    {'name': 'Dr. Ogaro', 'email': 'ogaro@proposalx.com', 'password': '1234567'},
+    {'name': 'Dr. Jackline', 'email': 'jackline@proposalx.com', 'password': '1234567'},
+]
+
+def seed_reviewers():
+    from app.models.user import User
+    for r in REVIEWERS:
+        existing = User.query.filter_by(email=r['email']).first()
+        if not existing:
+            user = User(name=r['name'], email=r['email'], role='reviewer')
+            user.set_password(r['password'])
+            db.session.add(user)
+    db.session.commit()
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
@@ -22,5 +39,6 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        seed_reviewers()
 
     return app

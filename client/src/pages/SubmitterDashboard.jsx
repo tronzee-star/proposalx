@@ -49,9 +49,9 @@ function SubmitterDashboard() {
                   <th className="px-4 py-3 text-sm font-medium text-gray-600">Title</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-600">Institution</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-600">Submitted</th>
+                  <th className="px-4 py-3 text-sm font-medium text-gray-600">Reviews</th>
+                  <th className="px-4 py-3 text-sm font-medium text-gray-600">Avg Score</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">Grade</th>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">Reviewer</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -63,10 +63,12 @@ function SubmitterDashboard() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{proposal.institution}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{proposal.submitted_at}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{new Date(proposal.submitted_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{proposal.reviews_completed}/{proposal.reviews_total}</td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {proposal.average_score !== null ? `${proposal.average_score}/60` : '—'}
+                    </td>
                     <td className="px-4 py-3"><StatusBadge status={proposal.status} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{proposal.grade || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{proposal.reviewer || '—'}</td>
                   </tr>
                 ))}
               </tbody>

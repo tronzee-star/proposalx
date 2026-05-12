@@ -8,18 +8,15 @@ def register():
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
-    role = data.get('role', 'submitter')
 
     if not all([name, email, password]):
         return jsonify({'message': 'Name, email, and password are required'}), 400
 
-    if role not in ['submitter', 'reviewer']:
-        return jsonify({'message': 'Invalid role'}), 400
-
     if User.query.filter_by(email=email).first():
         return jsonify({'message': 'Email already registered'}), 409
 
-    user = User(name=name, email=email, role=role)
+    # Only submitter registration is allowed; reviewers are pre-seeded
+    user = User(name=name, email=email, role='submitter')
     user.set_password(password)
     db.session.add(user)
     db.session.commit()

@@ -1,19 +1,13 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const COLORS = {
-  pending: '#EAB308',
-  'under review': '#3B82F6',
-  approved: '#22C55E',
-  rejected: '#EF4444',
-};
+const COLORS = ['#EAB308', '#22C55E', '#EF4444'];
 
 function ProposalStatusChart({ stats }) {
   const data = [
     { name: 'Pending', value: stats.pending || 0 },
-    { name: 'Under Review', value: stats.underReview || 0 },
-    { name: 'Approved', value: stats.reviewed || 0 },
-    { name: 'Rejected', value: stats.rejected || 0 },
+    { name: 'Accepted', value: stats.accepted || 0 },
+    { name: 'Declined', value: stats.declined || 0 },
   ].filter((d) => d.value > 0);
 
   if (data.length === 0) {
@@ -25,7 +19,7 @@ function ProposalStatusChart({ stats }) {
       <PieChart>
         <Pie data={data} cx="50%" cy="50%" outerRadius={100} dataKey="value" label>
           {data.map((entry, index) => (
-            <Cell key={index} fill={Object.values(COLORS)[index % Object.values(COLORS).length]} />
+            <Cell key={index} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip />

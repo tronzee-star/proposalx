@@ -10,15 +10,27 @@ class Proposal(db.Model):
     contact = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     file_path = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.String(50), default='pending')  # pending, under review, approved, rejected, revision
+    status = db.Column(db.String(50), default='pending')  # pending, accepted, declined
     submitter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     submitted_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    reviewer = db.relationship('User', foreign_keys=[reviewer_id], backref='assigned_proposals')
-    evaluation = db.relationship('Evaluation', backref='proposal', uselist=False, lazy=True)
+    evaluations = db.relationship('Evaluation', backref='proposal', lazy=True)
+
+    def get_completed_evaluations(self):
+        return [e for e in self.evaluations if e.status != 'pending']
+
+    def get_average_score(self):
+        completed = self.get_completed_evaluations()
+        if not completed:
+            return None
+        return round(sum(e.total_score for e in completed) / len(completed), 1)
+
+    def get_reviews_completed(self):
+        return len(self.get_completed_evaluations())
 
     def to_dict(self):
+        avg_score = self.get_average_score()
+        completed = self.get_reviews_completed()
         return {
             'id': self.id,
             'title': self.title,
@@ -30,9 +42,8 @@ class Proposal(db.Model):
             'status': self.status,
             'submitter_id': self.submitter_id,
             'submitter_name': self.submitter.name if self.submitter else None,
-            'reviewer_id': self.reviewer_id,
-            'reviewer': self.reviewer.name if self.reviewer else None,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
-            'grade': self.evaluation.total_score if self.evaluation else None,
-            'evaluation': self.evaluation.to_dict() if self.evaluation else None,
+            'average_score': avg_score,
+            'reviews_completed': completed,
+            'reviews_total': 4,
         }

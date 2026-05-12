@@ -3,6 +3,8 @@ from flask import request, jsonify, current_app, send_file
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.proposal import Proposal
+from app.models.evaluation import Evaluation
+from app.models.user import User
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 
@@ -19,7 +21,10 @@ def get_my_proposals(current_user):
 
 def get_proposal_by_id(current_user, proposal_id):
     proposal = Proposal.query.get_or_404(proposal_id)
-    return jsonify(proposal.to_dict()), 200
+    data = proposal.to_dict()
+    # Include per-reviewer evaluations for detail view
+    data['evaluations'] = [e.to_dict() for e in proposal.evaluations]
+    return jsonify(data), 200
 
 def submit_proposal(current_user):
     title = request.form.get('title')
@@ -52,8 +57,19 @@ def submit_proposal(current_user):
         status='pending',
     )
     db.session.add(proposal)
-    db.session.commit()
+    db.session.flush()  # get proposal.id
 
+    # Auto-assign all 4 reviewers
+    reviewers = User.query.filter_by(role='reviewer').all()
+    for reviewer in reviewers:
+        evaluation = Evaluation(
+            proposal_id=proposal.id,
+            reviewer_id=reviewer.id,
+            status='pending',
+        )
+        db.session.add(evaluation)
+
+    db.session.commit()
     return jsonify(proposal.to_dict()), 201
 
 def get_proposal_file(current_user, proposal_id):

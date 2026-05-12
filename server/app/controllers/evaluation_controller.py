@@ -1,12 +1,13 @@
+import datetime
 from flask import request, jsonify
 from app import db
-from app.models.evaluation import Evaluation
+from app.models.evaluation import Evaluation, PASS_MARK
 from app.models.proposal import Proposal
 from app.models.user import User
-from app.services.grading_service import calculate_total_score, calculate_average_score, determine_status
 
 def get_all_evaluations(current_user):
-    evaluations = Evaluation.query.all()
+    """Get evaluations for the current reviewer."""
+    evaluations = Evaluation.query.filter_by(reviewer_id=current_user.id).all()
     result = []
     for ev in evaluations:
         proposal = Proposal.query.get(ev.proposal_id)
@@ -17,12 +18,14 @@ def get_all_evaluations(current_user):
             'phone': proposal.contact if proposal else None,
             'institution': proposal.institution if proposal else None,
             'proposal_title': proposal.title if proposal else None,
-            'status': proposal.status if proposal else None,
         })
     return jsonify(result), 200
 
 def get_evaluation_by_proposal(current_user, proposal_id):
-    evaluation = Evaluation.query.filter_by(proposal_id=proposal_id).first()
+    """Get the current reviewer's evaluation for a specific proposal."""
+    evaluation = Evaluation.query.filter_by(
+        proposal_id=proposal_id, reviewer_id=current_user.id
+    ).first()
     if not evaluation:
         return jsonify({'message': 'Evaluation not found'}), 404
     return jsonify(evaluation.to_dict()), 200
@@ -32,56 +35,65 @@ def submit_evaluation(current_user):
     proposal_id = data.get('proposal_id')
     scores = data.get('scores', {})
     comments = data.get('comments', '')
-    recommendation = data.get('recommendation')
 
-    if not all([proposal_id, recommendation]):
-        return jsonify({'message': 'Proposal ID and recommendation are required'}), 400
+    if not proposal_id:
+        return jsonify({'message': 'Proposal ID is required'}), 400
 
     proposal = Proposal.query.get_or_404(proposal_id)
 
-    existing = Evaluation.query.filter_by(proposal_id=proposal_id).first()
-    if existing:
-        return jsonify({'message': 'This proposal has already been evaluated'}), 409
+    # Find this reviewer's pending evaluation
+    evaluation = Evaluation.query.filter_by(
+        proposal_id=proposal_id, reviewer_id=current_user.id
+    ).first()
 
-    total = calculate_total_score(scores)
-    average = calculate_average_score(scores)
+    if not evaluation:
+        return jsonify({'message': 'You are not assigned to review this proposal'}), 403
 
-    evaluation = Evaluation(
-        proposal_id=proposal_id,
-        reviewer_id=current_user.id,
-        total_score=total,
-        average_score=average,
-        comments=comments,
-        recommendation=recommendation,
-    )
+    if evaluation.status != 'pending':
+        return jsonify({'message': 'You have already reviewed this proposal'}), 409
+
+    total = sum(scores.values())
     evaluation.scores = scores
-    db.session.add(evaluation)
+    evaluation.total_score = total
+    evaluation.comments = comments
+    evaluation.status = 'accepted' if total >= PASS_MARK else 'declined'
+    evaluation.evaluated_at = datetime.datetime.utcnow()
 
-    proposal.status = determine_status(recommendation)
-    proposal.reviewer_id = current_user.id
+    # Check if all 4 reviewers have completed — update proposal status
+    all_evals = Evaluation.query.filter_by(proposal_id=proposal_id).all()
+    completed = [e for e in all_evals if e.status != 'pending']
+    if len(completed) == 4:
+        avg = sum(e.total_score for e in completed) / 4
+        proposal.status = 'accepted' if avg >= PASS_MARK else 'declined'
+
     db.session.commit()
-
-    return jsonify(evaluation.to_dict()), 201
+    return jsonify(evaluation.to_dict()), 200
 
 def get_stats(current_user):
     total = Proposal.query.count()
+    accepted = Proposal.query.filter_by(status='accepted').count()
+    declined = Proposal.query.filter_by(status='declined').count()
     pending = Proposal.query.filter_by(status='pending').count()
-    under_review = Proposal.query.filter_by(status='under review').count()
-    approved = Proposal.query.filter_by(status='approved').count()
-    rejected = Proposal.query.filter_by(status='rejected').count()
-    reviewed = approved + rejected
+    reviewed = accepted + declined
     active_reviewers = User.query.filter_by(role='reviewer').count()
 
-    evals = Evaluation.query.all()
-    avg_score = round(sum(e.average_score for e in evals) / len(evals), 1) if evals else 0
+    completed_evals = Evaluation.query.filter(Evaluation.status != 'pending').all()
+    avg_score = round(sum(e.total_score for e in completed_evals) / len(completed_evals), 1) if completed_evals else 0
+
+    # Current reviewer's stats
+    my_evals = Evaluation.query.filter_by(reviewer_id=current_user.id).all()
+    my_completed = [e for e in my_evals if e.status != 'pending']
+    my_pending = [e for e in my_evals if e.status == 'pending']
 
     return jsonify({
         'totalProposals': total,
         'reviewed': reviewed,
         'pending': pending,
-        'underReview': under_review,
-        'approved': approved,
-        'rejected': rejected,
+        'accepted': accepted,
+        'declined': declined,
         'averageScore': avg_score,
         'activeReviewers': active_reviewers,
+        'myCompleted': len(my_completed),
+        'myPending': len(my_pending),
+        'passmark': PASS_MARK,
     }), 200

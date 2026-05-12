@@ -3,33 +3,35 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import SummaryCard from '../components/SummaryCard';
-import ProposalTable from '../components/ProposalTable';
 import ProposalStatusChart from '../components/ProposalStatusChart';
 import ReviewerActivityPanel from '../components/ReviewerActivityPanel';
-import { proposalService } from '../services/proposalService';
 import { evaluationService } from '../services/evaluationService';
 
 function ReviewerDashboard() {
   const { user } = useAuth();
-  const [proposals, setProposals] = useState([]);
+  const [myEvaluations, setMyEvaluations] = useState([]);
   const [stats, setStats] = useState({
     totalProposals: 0,
     reviewed: 0,
     pending: 0,
-    underReview: 0,
+    accepted: 0,
+    declined: 0,
     averageScore: 0,
     activeReviewers: 0,
+    myCompleted: 0,
+    myPending: 0,
+    passmark: 30,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [proposalData, statsData] = await Promise.all([
-          proposalService.getAll(),
+        const [evalsData, statsData] = await Promise.all([
+          evaluationService.getAll(),
           evaluationService.getStats(),
         ]);
-        setProposals(proposalData);
+        setMyEvaluations(evalsData);
         setStats(statsData);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
@@ -39,6 +41,9 @@ function ReviewerDashboard() {
     };
     fetchData();
   }, []);
+
+  const pendingReviews = myEvaluations.filter(e => e.status === 'pending');
+  const completedReviews = myEvaluations.filter(e => e.status !== 'pending');
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -51,14 +56,14 @@ function ReviewerDashboard() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
             <SummaryCard title="Total Proposals" value={stats.totalProposals} color="blue" />
-            <SummaryCard title="Reviewed" value={stats.reviewed} color="green" />
-            <SummaryCard title="Pending" value={stats.pending} color="yellow" />
-            <SummaryCard title="Under Review" value={stats.underReview} color="indigo" />
-            <SummaryCard title="Avg Score" value={stats.averageScore} color="purple" />
-            <SummaryCard title="Active Reviewers" value={stats.activeReviewers} color="teal" />
+            <SummaryCard title="My Completed" value={stats.myCompleted} color="green" />
+            <SummaryCard title="My Pending" value={stats.myPending} color="yellow" />
+            <SummaryCard title="Accepted" value={stats.accepted} color="emerald" />
+            <SummaryCard title="Declined" value={stats.declined} color="red" />
+            <SummaryCard title="Pass Mark" value={`${stats.passmark}/60`} color="purple" />
           </div>
 
-          {/* Status Chart */}
+          {/* Charts & Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-700 mb-4">Proposal Status Overview</h2>
@@ -70,10 +75,71 @@ function ReviewerDashboard() {
             </div>
           </div>
 
-          {/* Recent Proposals Table */}
+          {/* Pending Reviews */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Pending Reviews ({pendingReviews.length})</h2>
+            {loading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : pendingReviews.length === 0 ? (
+              <p className="text-gray-500">No pending reviews.</p>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Proposal</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Submitter</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Institution</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {pendingReviews.map(ev => (
+                    <tr key={ev.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-700">{ev.proposal_title}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{ev.submitter_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{ev.institution}</td>
+                      <td className="px-4 py-3">
+                        <a href={`/proposal/${ev.proposal_id}`}
+                          className="text-blue-600 hover:underline text-sm font-medium">Grade</a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* My Completed Reviews */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Recent Proposals</h2>
-            <ProposalTable proposals={proposals} loading={loading} />
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">My Completed Reviews ({completedReviews.length})</h2>
+            {completedReviews.length === 0 ? (
+              <p className="text-gray-500">No completed reviews yet.</p>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Proposal</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Submitter</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">My Score</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">My Verdict</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {completedReviews.map(ev => (
+                    <tr key={ev.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-700">{ev.proposal_title}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{ev.submitter_name}</td>
+                      <td className="px-4 py-3 text-sm font-medium">{ev.total_score}/60</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                          ev.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>{ev.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

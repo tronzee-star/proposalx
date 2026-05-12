@@ -49,14 +49,7 @@ function RegisterPage() {
             <input type="password" name="password" value={formData.password} onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
-            <select name="role" value={formData.role} onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="submitter">Proposal Submitter</option>
-              <option value="reviewer">Proposal Reviewer</option>
-            </select>
-          </div>
+          <p className="text-xs text-gray-400">You will be registered as a Proposal Submitter.</p>
           <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
             Register
           </button>
