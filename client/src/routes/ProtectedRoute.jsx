@@ -9,11 +9,17 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  if (!user) {
+  // Check context first, then localStorage as fallback for state timing
+  const currentUser = user || (() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  })();
+
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
     return <Navigate to="/login" replace />;
   }
 

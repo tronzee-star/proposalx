@@ -5,9 +5,9 @@ import { LayoutDashboard, FileText, ClipboardCheck, Users, BarChart3, Settings, 
 
 const navItems = [
   { label: 'Dashboard', path: '/reviewer/dashboard', icon: LayoutDashboard },
-  { label: 'Proposals', path: '/reviewer/dashboard', icon: FileText },
+  { label: 'Proposals', path: '/reviewer/proposals', icon: FileText },
   { label: 'Evaluations', path: '/reviewer/evaluations', icon: ClipboardCheck },
-  { label: 'Reviewers', path: '/reviewer/dashboard', icon: Users },
+  { label: 'Reviewers', path: '/reviewer/reviewers', icon: Users },
   { label: 'Reports', path: '/reviewer/reports', icon: BarChart3 },
   { label: 'Settings', path: '/reviewer/settings', icon: Settings },
 ];

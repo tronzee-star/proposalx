@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'submitter' });
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -16,8 +22,7 @@ function RegisterPage() {
     e.preventDefault();
     setError('');
     try {
-      const user = await register(formData);
-      navigate(user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard');
+      await register(formData);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     }

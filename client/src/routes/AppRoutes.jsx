@@ -11,6 +11,8 @@ import EvaluationsPage from '../pages/EvaluationsPage';
 import ProposalDetailPage from '../pages/ProposalDetailPage';
 import ReportsPage from '../pages/ReportsPage';
 import SettingsPage from '../pages/SettingsPage';
+import ReviewerProposalsPage from '../pages/ReviewerProposalsPage';
+import ReviewersPage from '../pages/ReviewersPage';
 
 function AppRoutes() {
   const { user } = useAuth();
@@ -38,9 +40,19 @@ function AppRoutes() {
           <ReviewerDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/reviewer/proposals" element={
+        <ProtectedRoute allowedRoles={['reviewer']}>
+          <ReviewerProposalsPage />
+        </ProtectedRoute>
+      } />
       <Route path="/reviewer/evaluations" element={
         <ProtectedRoute allowedRoles={['reviewer']}>
           <EvaluationsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/reviewer/reviewers" element={
+        <ProtectedRoute allowedRoles={['reviewer']}>
+          <ReviewersPage />
         </ProtectedRoute>
       } />
       <Route path="/reviewer/reports" element={
