@@ -122,6 +122,7 @@ function ReviewerDashboard() {
                     <th className="px-4 py-3 text-sm font-medium text-gray-600">Submitter</th>
                     <th className="px-4 py-3 text-sm font-medium text-gray-600">My Score</th>
                     <th className="px-4 py-3 text-sm font-medium text-gray-600">My Verdict</th>
+                    <th className="px-4 py-3 text-sm font-medium text-gray-600">Comments</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -135,6 +136,7 @@ function ReviewerDashboard() {
                           ev.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>{ev.status}</span>
                       </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{ev.comments || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

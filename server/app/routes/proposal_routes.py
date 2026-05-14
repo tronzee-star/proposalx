@@ -11,7 +11,7 @@ proposal_bp = Blueprint('proposal', __name__)
 def list_proposals(current_user):
     return get_all_proposals(current_user)
 
-@proposal_bp.route('/my', methods=['GET'])
+@proposal_bp.route('/my/', methods=['GET'])
 @token_required
 def my_proposals(current_user):
     return get_my_proposals(current_user)

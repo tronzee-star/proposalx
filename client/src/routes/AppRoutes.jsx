@@ -13,6 +13,7 @@ import ReportsPage from '../pages/ReportsPage';
 import SettingsPage from '../pages/SettingsPage';
 import ReviewerProposalsPage from '../pages/ReviewerProposalsPage';
 import ReviewersPage from '../pages/ReviewersPage';
+import AdminDashboard from '../pages/AdminDashboard';
 
 function AppRoutes() {
   const { user } = useAuth();
@@ -66,6 +67,13 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+
       {/* Shared Routes */}
       <Route path="/proposal/:id" element={
         <ProtectedRoute allowedRoles={['submitter', 'reviewer']}>
@@ -76,7 +84,11 @@ function AppRoutes() {
       {/* Default Redirect */}
       <Route path="/" element={
         user ? (
-          <Navigate to={user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard'} replace />
+          <Navigate to={
+            user.role === 'admin' ? '/admin/dashboard' :
+            user.role === 'reviewer' ? '/reviewer/dashboard' :
+            '/submitter/dashboard'
+          } replace />
         ) : (
           <Navigate to="/login" replace />
         )

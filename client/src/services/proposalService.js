@@ -2,7 +2,7 @@ import api from './api';
 
 export const proposalService = {
   getAll: async (params = {}) => {
-    const response = await api.get('/proposals', { params });
+    const response = await api.get('/proposals/', { params });
     return response.data;
   },
 
@@ -12,14 +12,15 @@ export const proposalService = {
   },
 
   submit: async (formData) => {
-    const response = await api.post('/proposals', formData, {
+    const response = await api.post('/proposals/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
   },
 
   getMyProposals: async () => {
-    const response = await api.get('/proposals/my');
+    const response = await api.get('/proposals/my/');
+    // Note: some endpoints may not have trailing slash, handled by Flask
     return response.data;
   },
 };

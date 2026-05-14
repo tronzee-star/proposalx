@@ -23,7 +23,7 @@ def evaluation_by_proposal(current_user, proposal_id):
 def create_evaluation(current_user):
     return submit_evaluation(current_user)
 
-@evaluation_bp.route('/stats', methods=['GET'])
+@evaluation_bp.route('/stats/', methods=['GET'])
 @token_required
 @role_required('reviewer')
 def stats(current_user):

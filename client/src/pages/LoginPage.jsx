@@ -11,7 +11,9 @@ function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      navigate(user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard', { replace: true });
+      const dest = user.role === 'admin' ? '/admin/dashboard' :
+        user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard';
+      navigate(dest, { replace: true });
     }
   }, [user, navigate]);
 

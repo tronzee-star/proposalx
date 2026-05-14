@@ -84,13 +84,15 @@ def get_stats(current_user):
     my_evals = Evaluation.query.filter_by(reviewer_id=current_user.id).all()
     my_completed = [e for e in my_evals if e.status != 'pending']
     my_pending = [e for e in my_evals if e.status == 'pending']
+    my_accepted = [e for e in my_evals if e.status == 'accepted']
+    my_declined = [e for e in my_evals if e.status == 'declined']
 
     return jsonify({
         'totalProposals': total,
         'reviewed': reviewed,
-        'pending': pending,
-        'accepted': accepted,
-        'declined': declined,
+        'pending': len(my_pending),
+        'accepted': len(my_accepted),
+        'declined': len(my_declined),
         'averageScore': avg_score,
         'activeReviewers': active_reviewers,
         'myCompleted': len(my_completed),

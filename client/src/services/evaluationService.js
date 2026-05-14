@@ -2,7 +2,7 @@ import api from './api';
 
 export const evaluationService = {
   getAll: async (params = {}) => {
-    const response = await api.get('/evaluations', { params });
+    const response = await api.get('/evaluations/', { params });
     return response.data;
   },
 
@@ -12,12 +12,12 @@ export const evaluationService = {
   },
 
   submit: async (evaluationData) => {
-    const response = await api.post('/evaluations', evaluationData);
+    const response = await api.post('/evaluations/', evaluationData);
     return response.data;
   },
 
   getStats: async () => {
-    const response = await api.get('/evaluations/stats');
+    const response = await api.get('/evaluations/stats/');
     return response.data;
   },
 };
