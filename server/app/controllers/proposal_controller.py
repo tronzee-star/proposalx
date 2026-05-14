@@ -76,4 +76,4 @@ def get_proposal_file(current_user, proposal_id):
     proposal = Proposal.query.get_or_404(proposal_id)
     if not proposal.file_path or not os.path.exists(proposal.file_path):
         return jsonify({'message': 'File not found'}), 404
-    return send_file(proposal.file_path, as_attachment=True)
+    return send_file(proposal.file_path, as_attachment=False)

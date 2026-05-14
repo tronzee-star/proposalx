@@ -5,13 +5,13 @@ class Proposal(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    institution = db.Column(db.String(200), nullable=False)
-    category = db.Column(db.String(100), nullable=False)
-    contact = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    institution = db.Column(db.String(200), nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    contact = db.Column(db.String(200), nullable=True)
+    description = db.Column(db.Text, nullable=True)
     file_path = db.Column(db.String(500), nullable=True)
     status = db.Column(db.String(50), default='pending')  # pending, accepted, declined
-    submitter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    submitter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     submitted_at = db.Column(db.DateTime, server_default=db.func.now())
 
     evaluations = db.relationship('Evaluation', backref='proposal', lazy=True)
@@ -39,11 +39,12 @@ class Proposal(db.Model):
             'contact': self.contact,
             'description': self.description,
             'file_url': f'/api/proposals/{self.id}/file' if self.file_path else None,
+            'file_name': self.file_path.rsplit('/', 1)[-1].rsplit('\\', 1)[-1] if self.file_path else None,
             'status': self.status,
             'submitter_id': self.submitter_id,
             'submitter_name': self.submitter.name if self.submitter else None,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
             'average_score': avg_score,
             'reviews_completed': completed,
-            'reviews_total': 4,
+            'reviews_total': len(self.evaluations),
         }

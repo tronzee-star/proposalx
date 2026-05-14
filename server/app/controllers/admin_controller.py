@@ -1,13 +1,41 @@
-from flask import jsonify
+import os
+from flask import jsonify, request, current_app
+from werkzeug.utils import secure_filename
 from app import db
 from app.models.user import User
 from app.models.proposal import Proposal
 from app.models.evaluation import Evaluation
 
+ALLOWED_EXTENSIONS = {'pdf', 'docx'}
+
+def _allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def get_all_users(current_user):
     users = User.query.order_by(User.created_at.desc()).all()
     return jsonify([u.to_dict() for u in users]), 200
+
+
+def create_user(current_user):
+    data = request.get_json() or {}
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'reviewer')
+
+    if not all([name, email, password]):
+        return jsonify({'message': 'Name, email and password are required'}), 400
+    if role not in ('reviewer', 'admin'):
+        return jsonify({'message': 'Invalid role'}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({'message': 'Email already exists'}), 409
+
+    user = User(name=name, email=email, role=role)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user.to_dict()), 201
 
 
 def delete_user(current_user, user_id):
@@ -45,6 +73,58 @@ def delete_proposal(current_user, proposal_id):
     db.session.delete(proposal)
     db.session.commit()
     return jsonify({'message': f'Proposal "{proposal.title}" deleted'}), 200
+
+
+def get_reviewers(current_user):
+    reviewers = User.query.filter_by(role='reviewer').all()
+    return jsonify([u.to_dict() for u in reviewers]), 200
+
+
+def upload_proposal(current_user):
+    title = request.form.get('title')
+    reviewer_ids_raw = request.form.get('reviewer_ids', '')
+
+    if not title:
+        return jsonify({'message': 'Title is required'}), 400
+
+    try:
+        reviewer_ids = [int(x) for x in reviewer_ids_raw.split(',') if x.strip()]
+    except ValueError:
+        return jsonify({'message': 'Invalid reviewer IDs'}), 400
+
+    if len(reviewer_ids) < 3:
+        return jsonify({'message': 'At least 3 reviewers must be allocated'}), 400
+
+    # Validate all reviewer IDs exist and are reviewers
+    reviewers = User.query.filter(User.id.in_(reviewer_ids), User.role == 'reviewer').all()
+    if len(reviewers) != len(reviewer_ids):
+        return jsonify({'message': 'One or more selected reviewers are invalid'}), 400
+
+    file_path = None
+    if 'file' in request.files:
+        file = request.files['file']
+        if file and file.filename and _allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            upload_dir = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+
+    proposal = Proposal(
+        title=title,
+        file_path=file_path,
+        submitter_id=current_user.id,  # admin uploaded
+        status='pending',
+    )
+    db.session.add(proposal)
+    db.session.flush()
+
+    for r in reviewers:
+        ev = Evaluation(proposal_id=proposal.id, reviewer_id=r.id, status='pending')
+        db.session.add(ev)
+
+    db.session.commit()
+    return jsonify(proposal.to_dict()), 201
 
 
 def get_admin_stats(current_user):

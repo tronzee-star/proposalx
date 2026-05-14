@@ -5,13 +5,17 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import StatusBadge from '../components/StatusBadge';
 import EvaluationForm from '../components/EvaluationForm';
+import ProposalFileViewer from '../components/ProposalFileViewer';
 import { proposalService } from '../services/proposalService';
+import { evaluationService } from '../services/evaluationService';
+import { Link } from 'react-router-dom';
 
 function ProposalDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [proposal, setProposal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingEvals, setPendingEvals] = useState([]);
 
   const fetchProposal = async () => {
     try {
@@ -24,9 +28,24 @@ function ProposalDetailPage() {
     }
   };
 
+  const fetchPending = async () => {
+    try {
+      const evals = await evaluationService.getAll();
+      setPendingEvals(evals.filter(e => e.status === 'pending' && e.proposal_id !== Number(id)));
+    } catch (err) {
+      console.error('Failed to fetch pending evaluations:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProposal();
+    if (user?.role === 'reviewer') fetchPending();
   }, [id]);
+
+  const handleSubmitted = () => {
+    fetchProposal();
+    fetchPending();
+  };
 
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!proposal) return <div className="flex items-center justify-center h-screen">Proposal not found.</div>;
@@ -44,34 +63,37 @@ function ProposalDetailPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <div className="flex justify-between items-start mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">{proposal.title}</h1>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">{proposal.title}</h1>
+                <p className="text-xs text-gray-500 mt-1">
+                  Submitted {new Date(proposal.submitted_at).toLocaleDateString()} · {proposal.reviews_completed}/{proposal.reviews_total} reviews completed
+                </p>
+              </div>
               <StatusBadge status={proposal.status} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
-              <p><span className="font-medium">Institution:</span> {proposal.institution}</p>
-              <p><span className="font-medium">Category:</span> {proposal.category}</p>
-              <p><span className="font-medium">Submitted by:</span> {proposal.submitter_name}</p>
-              <p><span className="font-medium">Contact:</span> {proposal.contact}</p>
-              <p><span className="font-medium">Submitted:</span> {new Date(proposal.submitted_at).toLocaleDateString()}</p>
-              <p><span className="font-medium">Reviews:</span> {proposal.reviews_completed}/{proposal.reviews_total} completed</p>
-            </div>
-            {proposal.average_score !== null && (
+
+            {proposal.average_score !== null && user?.role === 'admin' && (
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium text-gray-700">
                   Average Score: <span className="text-lg font-bold">{proposal.average_score}/60</span>
-                  <span className="ml-2 text-xs">(Pass mark: 30/60)</span>
                 </p>
               </div>
             )}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-2">Description</h3>
-              <p className="text-gray-600">{proposal.description}</p>
-            </div>
-            {proposal.file_url && (
-              <div className="mt-4">
-                <a href={proposal.file_url} target="_blank" rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm">Download Attached Document</a>
+
+            {proposal.description && (
+              <div className="mb-4">
+                <h3 className="font-medium text-gray-700 mb-2">Description</h3>
+                <p className="text-gray-600 whitespace-pre-wrap">{proposal.description}</p>
               </div>
+            )}
+
+            {proposal.file_url ? (
+              <div>
+                <h3 className="font-medium text-gray-700 mb-2">Proposal Document</h3>
+                <ProposalFileViewer proposalId={proposal.id} fileName={proposal.file_name} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">No document attached.</p>
             )}
           </div>
 
@@ -79,7 +101,7 @@ function ProposalDetailPage() {
           {isReviewer && myEval && myEval.status === 'pending' && (
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <h2 className="text-lg font-semibold text-gray-700 mb-4">Grade This Proposal</h2>
-              <EvaluationForm proposalId={proposal.id} onSubmitted={fetchProposal} />
+              <EvaluationForm proposalId={proposal.id} onSubmitted={handleSubmitted} />
             </div>
           )}
 
@@ -89,11 +111,33 @@ function ProposalDetailPage() {
               <h2 className="text-lg font-semibold text-gray-700 mb-4">Your Evaluation</h2>
               <div className="flex items-center gap-4 mb-3">
                 <span className="text-sm font-medium text-gray-600">Your Score: {myEval.total_score}/60</span>
-                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                  myEval.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>{myEval.status}</span>
               </div>
               {myEval.comments && <p className="text-sm text-gray-600"><span className="font-medium">Comments:</span> {myEval.comments}</p>}
+            </div>
+          )}
+
+          {/* Pending reviews list — visible to reviewers after they grade or while still pending */}
+          {isReviewer && myEval && myEval.status !== 'pending' && (
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                Your Pending Reviews ({pendingEvals.length})
+              </h2>
+              {pendingEvals.length === 0 ? (
+                <p className="text-sm text-gray-500">You have no other pending reviews. Great job!</p>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {pendingEvals.map(ev => (
+                    <li key={ev.id} className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{ev.proposal_title}</p>
+                        <p className="text-xs text-gray-500">{ev.submitter_name} · {ev.institution || '—'}</p>
+                      </div>
+                      <Link to={`/proposal/${ev.proposal_id}`}
+                        className="text-blue-600 hover:underline text-sm font-medium">Grade</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

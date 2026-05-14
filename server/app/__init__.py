@@ -9,6 +9,7 @@ REVIEWERS = [
     {'name': 'Dr. James', 'email': 'james@proposalx.com', 'password': '1234567'},
     {'name': 'Dr. Ogaro', 'email': 'ogaro@proposalx.com', 'password': '1234567'},
     {'name': 'Dr. Jackline', 'email': 'jackline@proposalx.com', 'password': '1234567'},
+    {'name': 'Dr. Purity', 'email': 'purity@proposalx.com', 'password': '1234567'},
 ]
 
 ADMIN = {'name': 'Admin', 'email': 'admin@gmail.com', 'password': '1234567'}

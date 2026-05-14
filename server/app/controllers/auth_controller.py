@@ -4,25 +4,7 @@ from app.models.user import User
 from app.utils.token_utils import generate_token
 
 def register():
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
-
-    if not all([name, email, password]):
-        return jsonify({'message': 'Name, email, and password are required'}), 400
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({'message': 'Email already registered'}), 409
-
-    # Only submitter registration is allowed; reviewers are pre-seeded
-    user = User(name=name, email=email, role='submitter')
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-
-    token = generate_token(user.id)
-    return jsonify({'token': token, 'user': user.to_dict()}), 201
+    return jsonify({'message': 'Registration is disabled. Contact admin for access.'}), 403
 
 def login():
     data = request.get_json()

@@ -3,10 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import SubmitterDashboard from '../pages/SubmitterDashboard';
 import ReviewerDashboard from '../pages/ReviewerDashboard';
-import ProposalSubmissionPage from '../pages/ProposalSubmissionPage';
 import EvaluationsPage from '../pages/EvaluationsPage';
 import ProposalDetailPage from '../pages/ProposalDetailPage';
 import ReportsPage from '../pages/ReportsPage';
@@ -21,19 +18,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-
-      {/* Submitter Routes */}
-      <Route path="/submitter/dashboard" element={
-        <ProtectedRoute allowedRoles={['submitter']}>
-          <SubmitterDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/submitter/submit" element={
-        <ProtectedRoute allowedRoles={['submitter']}>
-          <ProposalSubmissionPage />
-        </ProtectedRoute>
-      } />
 
       {/* Reviewer Routes */}
       <Route path="/reviewer/dashboard" element={
@@ -76,7 +60,7 @@ function AppRoutes() {
 
       {/* Shared Routes */}
       <Route path="/proposal/:id" element={
-        <ProtectedRoute allowedRoles={['submitter', 'reviewer']}>
+        <ProtectedRoute allowedRoles={['reviewer', 'admin']}>
           <ProposalDetailPage />
         </ProtectedRoute>
       } />
@@ -85,9 +69,7 @@ function AppRoutes() {
       <Route path="/" element={
         user ? (
           <Navigate to={
-            user.role === 'admin' ? '/admin/dashboard' :
-            user.role === 'reviewer' ? '/reviewer/dashboard' :
-            '/submitter/dashboard'
+            user.role === 'admin' ? '/admin/dashboard' : '/reviewer/dashboard'
           } replace />
         ) : (
           <Navigate to="/login" replace />

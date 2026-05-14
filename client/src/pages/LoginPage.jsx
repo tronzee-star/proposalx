@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
@@ -11,8 +11,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      const dest = user.role === 'admin' ? '/admin/dashboard' :
-        user.role === 'reviewer' ? '/reviewer/dashboard' : '/submitter/dashboard';
+      const dest = user.role === 'admin' ? '/admin/dashboard' : '/reviewer/dashboard';
       navigate(dest, { replace: true });
     }
   }, [user, navigate]);
@@ -47,8 +46,8 @@ function LoginPage() {
             Sign In
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Don't have an account? <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
+        <p className="mt-4 text-center text-xs text-gray-500">
+          Access is restricted to authorized accounts.
         </p>
       </div>
     </div>

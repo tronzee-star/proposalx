@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import SummaryCard from '../components/SummaryCard';
-import ProposalStatusChart from '../components/ProposalStatusChart';
+import ReviewerProgressPanel from '../components/ReviewerProgressPanel';
 import ReviewerActivityPanel from '../components/ReviewerActivityPanel';
 import { evaluationService } from '../services/evaluationService';
 
@@ -54,20 +54,17 @@ function ReviewerDashboard() {
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <SummaryCard title="Total Proposals" value={stats.totalProposals} color="blue" />
             <SummaryCard title="My Completed" value={stats.myCompleted} color="green" />
             <SummaryCard title="My Pending" value={stats.myPending} color="yellow" />
-            <SummaryCard title="Accepted" value={stats.accepted} color="emerald" />
-            <SummaryCard title="Declined" value={stats.declined} color="red" />
-            <SummaryCard title="Pass Mark" value={`${stats.passmark}/60`} color="purple" />
           </div>
 
-          {/* Charts & Activity */}
+          {/* Progress & Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-700 mb-4">Proposal Status Overview</h2>
-              <ProposalStatusChart stats={stats} />
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">Reviewer Completion Progress</h2>
+              <ReviewerProgressPanel />
             </div>
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-700 mb-4">Reviewer Activity</h2>

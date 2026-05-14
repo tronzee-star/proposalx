@@ -10,8 +10,6 @@ const CRITERIA = [
   { key: 'budget_justification', label: 'Budget Justification' },
 ];
 
-const PASS_MARK = 30;
-
 function EvaluationForm({ proposalId, onSubmitted }) {
   const [scores, setScores] = useState(
     CRITERIA.reduce((acc, c) => ({ ...acc, [c.key]: 5 }), {})
@@ -22,7 +20,6 @@ function EvaluationForm({ proposalId, onSubmitted }) {
   const [error, setError] = useState('');
 
   const totalScore = Object.values(scores).reduce((sum, v) => sum + Number(v), 0);
-  const verdict = totalScore >= PASS_MARK ? 'Accepted' : 'Declined';
 
   const handleScoreChange = (key, value) => {
     setScores({ ...scores, [key]: Math.min(10, Math.max(1, Number(value))) });
@@ -50,7 +47,7 @@ function EvaluationForm({ proposalId, onSubmitted }) {
   if (success) {
     return (
       <div className="bg-green-100 text-green-700 p-4 rounded">
-        Evaluation submitted! Your score: <strong>{totalScore}/60</strong> — <strong>{verdict}</strong>
+        Evaluation submitted successfully! Your score: <strong>{totalScore}/60</strong>
       </div>
     );
   }
@@ -70,12 +67,8 @@ function EvaluationForm({ proposalId, onSubmitted }) {
         ))}
       </div>
 
-      <div className={`flex gap-6 text-sm font-medium p-3 rounded ${
-        totalScore >= PASS_MARK ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-      }`}>
+      <div className="flex gap-6 text-sm font-medium p-3 rounded bg-blue-50 text-blue-700">
         <span>Total Score: <strong>{totalScore}/60</strong></span>
-        <span>Pass Mark: <strong>{PASS_MARK}/60</strong></span>
-        <span>Verdict: <strong>{verdict}</strong></span>
       </div>
 
       <div>

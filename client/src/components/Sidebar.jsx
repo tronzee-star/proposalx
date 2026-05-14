@@ -17,7 +17,7 @@ function Sidebar() {
   const { logout } = useAuth();
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
+    <aside className="w-64 bg-gray-900 text-white h-screen sticky top-0 flex flex-col">
       <div className="px-6 py-5 border-b border-gray-700">
         <h1 className="text-xl font-bold">ProposalX</h1>
       </div>
